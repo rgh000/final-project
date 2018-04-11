@@ -7,13 +7,18 @@ import math
 import random
 import re
 import numpy as np
+import urllib2
+import re
+from bs4 import BeautifulSoup
 
+#Load pre-trained word2ec vectors
 from gensim.models import KeyedVectors
 model = KeyedVectors.load_word2vec_format('GoogleNews-vectors-negative300.bin', binary=True)
 
 def alpha(word):
 	return re.sub('[^A-Za-z\']+', '', word.lower())
 
+#load function word list, context word list, target word list
 f = open('fwlist-277.txt', 'r')
 lines4 = f.readlines()
 f.close()
@@ -46,6 +51,7 @@ for l in lines3:
 		i += 1
 
 
+#Check if preloaded word2vec vector exists for word
 def word2vec(word):
 	try:
 		a = model[alpha(word)]
@@ -54,25 +60,35 @@ def word2vec(word):
 		return False
 
 
+#Reverse look up context word given its id
 def revcont(n):
 	for k,v in contexts.iteritems():
 		if v == n:
 			return k
 
+#Load sparse matrices with context information from file
 M_list = []
 for i in range(20):
 	M_list.append(scipy.sparse.load_npz('M_M' + str(i) + '.npz').tolil())
 
 
+
+
+
+
+
+
+
+
+
+
+#Supply target word and decade (10 => 1800-1810, 11 => 1810-1820, ..., 19 => 1990-2000)
 target_word = 'mouse'
-year = 18
+year = 19
 
 lil = M_list[year][targets[target_word]].tolil()
 
-import urllib2
-import re
-from bs4 import BeautifulSoup
-
+#Scrape historical thesaurus and parse definitions
 page = urllib2.urlopen('http://historicalthesaurus.arts.gla.ac.uk/category-selection/?qsearch=' + target_word)
 soup = BeautifulSoup(page, 'html.parser')
 box = soup.find_all('p', class_='catOdd') + soup.find_all('p', class_='catEven')
@@ -82,20 +98,35 @@ for b in box:
 		definitions.append(re.sub('[0-9a-z| ]*\.', '', b.text).replace(u'\u2013', '-').replace('/', ' ').split(' :: '))
 
 defv = []
+definition_used = []
 for d in definitions:
 	#if d[len(d)-1][-2:-1] == '-' or (d[len(d)-1][-2:-1].isdigit() and int(d[len(d)-1][-5:-1]) > 1800 and d[len(d)-1][-6:-5] == '-'):
 	if d[len(d)-1][-2:-1] == '-' and (d[len(d)-1][-4:-2] == 'OE' or (d[len(d)-1][-3:-2].isdigit() and d[len(d)-1][-4:-3].isdigit() and d[len(d)-1][-5:-4].isdigit() and d[len(d)-1][-6:-5].isdigit() and int(d[len(d)-1][-6:-2]) < (1809 + year * 10))):
+		definition_used.append(True)
 		l = np.zeros(300)
 		count = 0
+		added = []
 		for e in d:
 			f = re.split(r'[ /]+', e)
 			for g in f:
-				if not alpha(g) == '' and not alpha(g) in functions and word2vec(g):
+				if not alpha(g) == '' and not alpha(g) in functions and word2vec(g) and not alpha(g) in added:
 					l += model[alpha(g)]
+					added.append(alpha(g))
 					count += 1
 		defv.append(l / (count + 1e-15))
+	else:
+		definition_used.append(False)
 
-############ WARNING: NO IDEA IF THIS WORKS!
+try:
+	for i in range(len(defv)):
+		for j in range(len(defv))[i:]:
+			if cosine_similarity([defv[i], defv[j]] > 0.7):
+				defv[i] = (defv[i] + defv[j]) / 2
+				definition_used[j] = False
+				del defv[j]
+except:
+	pass
+
 cluster = []
 prev = []
 vectors = []
@@ -103,6 +134,7 @@ for d in defv:
 	vectors.append([d])
 
 
+#k-means clustering with upper bound of 10 iterations
 for z in range(10):
 	print z
 	mean = []
@@ -151,11 +183,17 @@ for z in range(10):
 	else:
 		prev = cluster
 
+
+#Print clusters
 i = -1
+j = -1
 for d in definitions:
+	j += 1
 	#if d[len(d)-1][-2:-1] == '-' or (d[len(d)-1][-2:-1].isdigit() and int(d[len(d)-1][-5:-1]) > 1800 and d[len(d)-1][-6:-5] == '-'):
-	if d[len(d)-1][-2:-1] == '-' and (d[len(d)-1][-4:-2] == 'OE' or (d[len(d)-1][-3:-2].isdigit() and d[len(d)-1][-4:-3].isdigit() and d[len(d)-1][-5:-4].isdigit() and d[len(d)-1][-6:-5].isdigit() and int(d[len(d)-1][-6:-2]) < (1809 + year * 10))):
+	#if d[len(d)-1][-2:-1] == '-' and (d[len(d)-1][-4:-2] == 'OE' or (d[len(d)-1][-3:-2].isdigit() and d[len(d)-1][-4:-3].isdigit() and d[len(d)-1][-5:-4].isdigit() and d[len(d)-1][-6:-5].isdigit() and int(d[len(d)-1][-6:-2]) < (1809 + year * 10))):
+	if definition_used[j]:
 		i += 1
 		print d#, 'OE' if d[len(d)-1][-4:-2] == 'OE' else (int(d[len(d)-1][-6:-2]) if d[len(d)-1][-2:-1] == '-' else int(d[len(d)-1][-5:-1]))
 		print "Cluster: ", set(cluster[i])
 		print ''
+
