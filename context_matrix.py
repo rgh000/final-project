@@ -3,8 +3,6 @@ import scipy.sparse
 import os
 import re
 import sys
-#from sklearn.metrics.pairwise import cosine_similarity
-#from scipy.stats import pearsonr
 
 def alpha(word):
 	return re.sub('[^A-Za-z\']+', '', word.lower())
@@ -45,7 +43,6 @@ for i in range(20):
 	M_list.append(scipy.sparse.lil_matrix((len(targets), len(contexts) * len(contexts) * len(contexts) * len(contexts))))
 
 for i in range(int(sys.argv[1]))[int(sys.argv[1])-50:]:
-#for i in range(1):
 	os.system("unzip *-" + str(i) + ".csv.zip -d ./M/")
 	f = open('M/googlebooks-eng-1M-5gram-20090715-' + str(i) + '.csv', 'r')
 	lines = f.readlines()
