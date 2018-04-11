@@ -83,7 +83,7 @@ for i in range(20):
 
 
 #Supply target word and decade (10 => 1800-1810, 11 => 1810-1820, ..., 19 => 1990-2000)
-target_word = 'cell'
+target_word = 'mouse'
 year = 19
 
 lil = M_list[year][targets[target_word]].tolil()
@@ -100,6 +100,7 @@ for b in box:
 defv = []
 definition_used = []
 for d in definitions:
+	#if d[len(d)-1][-2:-1] == '-' or (d[len(d)-1][-2:-1].isdigit() and int(d[len(d)-1][-5:-1]) > 1800 and d[len(d)-1][-6:-5] == '-'):
 	if d[len(d)-1][-2:-1] == '-' and (d[len(d)-1][-4:-2] == 'OE' or (d[len(d)-1][-3:-2].isdigit() and d[len(d)-1][-4:-3].isdigit() and d[len(d)-1][-5:-4].isdigit() and d[len(d)-1][-6:-5].isdigit() and int(d[len(d)-1][-6:-2]) < (1809 + year * 10))):
 		l = np.zeros(300)
 		count = 0
@@ -113,8 +114,9 @@ for d in definitions:
 					count += 1
 		exists = False
 		for i in range(len(defv)):
-			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.7:
+			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.8 and not exists:
 				exists = True
+				defv[i] = (defv[i] + l / (count + 1e-15)) / 2
 		if not exists:
 			defv.append(l / (count + 1e-15))
 			definition_used.append(True)
@@ -162,6 +164,7 @@ for z in range(10):
 				avg = avg + model[alpha(revcont(first))]
 				count += 1
 			if not count == 0:
+			#if True:
 				avg = avg / (count + 1e-15)
 				maximum = -1000000
 				maxi = -1000000
@@ -170,6 +173,7 @@ for z in range(10):
 						maximum = cosine_similarity([avg, mean[i]])[0][1]
 						maxi = i
 				for q in range(int(val)):
+				#if True:
 					cluster[maxi].append('{' + alpha(revcont(first)) + ' ' + alpha(revcont(second)) + ' ' + target_word + ' ' + alpha(revcont(third)) + ' ' + alpha(revcont(fourth)) + '}')
 					vectors[maxi].append(avg)
 	if cluster == prev:
@@ -183,9 +187,11 @@ i = -1
 j = -1
 for d in definitions:
 	j += 1
+	#if d[len(d)-1][-2:-1] == '-' or (d[len(d)-1][-2:-1].isdigit() and int(d[len(d)-1][-5:-1]) > 1800 and d[len(d)-1][-6:-5] == '-'):
+	#if d[len(d)-1][-2:-1] == '-' and (d[len(d)-1][-4:-2] == 'OE' or (d[len(d)-1][-3:-2].isdigit() and d[len(d)-1][-4:-3].isdigit() and d[len(d)-1][-5:-4].isdigit() and d[len(d)-1][-6:-5].isdigit() and int(d[len(d)-1][-6:-2]) < (1809 + year * 10))):
 	if definition_used[j]:
 		i += 1
-		print d
+		print d#, 'OE' if d[len(d)-1][-4:-2] == 'OE' else (int(d[len(d)-1][-6:-2]) if d[len(d)-1][-2:-1] == '-' else int(d[len(d)-1][-5:-1]))
 		print "Cluster: ", set(cluster[i])
 		print ''
 
