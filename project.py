@@ -83,7 +83,7 @@ for i in range(20):
 
 
 #Supply target word and decade (10 => 1800-1810, 11 => 1810-1820, ..., 19 => 1990-2000)
-target_word = 'mouse'
+target_word = 'cell'
 year = 19
 
 lil = M_list[year][targets[target_word]].tolil()
@@ -102,7 +102,6 @@ definition_used = []
 for d in definitions:
 	#if d[len(d)-1][-2:-1] == '-' or (d[len(d)-1][-2:-1].isdigit() and int(d[len(d)-1][-5:-1]) > 1800 and d[len(d)-1][-6:-5] == '-'):
 	if d[len(d)-1][-2:-1] == '-' and (d[len(d)-1][-4:-2] == 'OE' or (d[len(d)-1][-3:-2].isdigit() and d[len(d)-1][-4:-3].isdigit() and d[len(d)-1][-5:-4].isdigit() and d[len(d)-1][-6:-5].isdigit() and int(d[len(d)-1][-6:-2]) < (1809 + year * 10))):
-		definition_used.append(True)
 		l = np.zeros(300)
 		count = 0
 		added = []
@@ -113,19 +112,17 @@ for d in definitions:
 					l += model[alpha(g)]
 					added.append(alpha(g))
 					count += 1
-		defv.append(l / (count + 1e-15))
+		exists = False
+		for i in range(len(defv)):
+			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.7:
+				exists = True
+		if not exists:
+			defv.append(l / (count + 1e-15))
+			definition_used.append(True)
+		else:
+			definition_used.append(False)
 	else:
 		definition_used.append(False)
-
-try:
-	for i in range(len(defv)):
-		for j in range(len(defv))[i:]:
-			if cosine_similarity([defv[i], defv[j]] > 0.7):
-				defv[i] = (defv[i] + defv[j]) / 2
-				definition_used[j] = False
-				del defv[j]
-except:
-	pass
 
 cluster = []
 prev = []
