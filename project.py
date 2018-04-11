@@ -83,7 +83,7 @@ for i in range(20):
 
 
 #Supply target word and decade (10 => 1800-1810, 11 => 1810-1820, ..., 19 => 1990-2000)
-target_word = 'mouse'
+target_word = 'cell'
 year = 19
 
 lil = M_list[year][targets[target_word]].tolil()
@@ -110,11 +110,11 @@ for d in definitions:
 			for g in f:
 				if not alpha(g) == '' and not alpha(g) in functions and word2vec(g) and not alpha(g) in added:
 					l += model[alpha(g)]
-					added.append(alpha(g))
+					#added.append(alpha(g))
 					count += 1
 		exists = False
 		for i in range(len(defv)):
-			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.8 and not exists:
+			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.7 and not exists:
 				exists = True
 				defv[i] = (defv[i] + l / (count + 1e-15)) / 2
 		if not exists:
