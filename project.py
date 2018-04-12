@@ -83,7 +83,7 @@ for i in range(20):
 
 
 #Supply target word and decade (10 => 1800-1810, 11 => 1810-1820, ..., 19 => 1990-2000)
-target_word = 'cell'
+target_word = 'mouse'
 year = 19
 
 lil = M_list[year][targets[target_word]].tolil()
@@ -114,7 +114,7 @@ for d in definitions:
 					count += 1
 		exists = False
 		for i in range(len(defv)):
-			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.7 and not exists:
+			if cosine_similarity([defv[i], (l / (count + 1e-15))])[0][1] > 0.8 and not exists:
 				exists = True
 				defv[i] = (defv[i] + l / (count + 1e-15)) / 2
 		if not exists:
